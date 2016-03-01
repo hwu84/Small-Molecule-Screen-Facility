@@ -44,35 +44,44 @@ Get_feature_oriMol = function(i){
 }
 
 boost_cv = function(TarName){
-  sink(paste0('bst_',TarName,'_8_5foldcv.txt'))
-  #sink('bst_ace_3_5foldcv.txt')  
+  sink(paste0('./cv_output/bst_',TarName,'_8_5foldcv.txt'))
   time_start=proc.time()
   param <- list(  objective           = "binary:logistic", 
                   booster = "gbtree",
                   eval_metric = "auc",
-                  eta                 = 0.04, # 0.023
+                  eta                 = 0.03, # 0.023
                   max_depth           = 7, #changed from default of 8
                   subsample           = 0.83,  
-                  colsample_bytree    = 0.77, 
+                  colsample_bytree    = 1, 
                   num_parallel_tree   = 1,
-                  min_child_weight    = 1,
+                  min_child_weight    = 5,
                   gamma               = 5
                   # alpha = 0.0001, 
                   # lambda = 1
   )
   set.seed(1120)
-  xgb.cv(param, eval(parse(text = paste0("dtrain_",TarName,"_v8"))),
-         nrounds = 1500, 
-         nfold=5,
-         metrics={'error'}, 
-         verbose = 1, 
-         print.every.n = 10,
-         maximize = TRUE,
-         nthread = 12
+  cv =  xgb.cv(param, eval(parse(text = paste0("dtrain_",TarName,"_v8"))),
+               nrounds = 1500, 
+               nfold=5,
+               metrics={'error'}, 
+               verbose = 1, 
+               print.every.n = 10,
+               maximize = TRUE,
+               nthread = 12
   )
   time = time_start-proc.time()
   print(time)
+  best <-max(cv$test.auc.mean)
+  bestIter <- min(which(cv$test.auc.mean==best))
+  print(cv[bestIter])
+  cat("Best round and test result auc\n",bestIter,best,"\n")
+  cat("Recommend round for training fullset:\n",bestIter*1.2)
   sink()
+  df = data.frame(targetName = TarName,round = bestIter, roundForTrain = bestIter*1.2,
+                  train.auc.mean = cv$train.auc.mean[bestIter],train.auc.std = cv$train.auc.std[bestIter],
+                  test.auc.mean = cv$test.auc.mean[bestIter],test.auc.std = cv$test.auc.std[bestIter])
+  write.table(df,"./cv_optimal/stacking8_cvOptimal.csv",append = T,col.names = FALSE,sep = ",",row.names = FALSE)
+  
 }
 
 boost_cv_holdout_8 = function(TarName,Rounds){
@@ -220,16 +229,6 @@ target_oriMol[[12]]  = target[[12]][index[[12]]]
 target_oriMol[[13]]  = target[[13]][index[[13]]]
 target_oriMol[[14]]  = target[[14]][index[[14]]]
 
-k =1
-table(target_oriMol[[k]])[2]/length(target_oriMol[[k]])
-k =k+1
-
-sink("dude14_oriMol_HitRate.txt")
-k =1
-table(target_oriMol[[k]])
-k =k+1
-sink()
-
 # get features
 feature_v8_oriMol = list()
 feature_v8_oriMol[[1]] = Get_feature_oriMol(1)
@@ -370,7 +369,7 @@ watchlist_src_v8 <- list(train=dtrain_src_v8)
 
 ## model cv
 
-boost_cv("ace") #[1490]	train-auc:0.997819+0.000507	train-error:0.005221+0.000401	test-auc:0.950538+0.012366	test-error:0.011784+0.001758
+boost_cv("ace") 
 boost_cv("adrb1")
 boost_cv("braf")
 boost_cv("cdk2")
