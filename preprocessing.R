@@ -1,5 +1,6 @@
 # Author: Haozhen Wu. 
 # Date: 12/31/2015. Modified: 1/11/2015
+# Convert data into required format.
 # command line : Rscript preprocessing.R XX.csv(csv file name) 500(volume amount) 1(which version)
 
 # Check if the system has dplyr package. If the system does not have the package, it will download by itself.
