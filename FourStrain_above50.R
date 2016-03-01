@@ -1,7 +1,7 @@
 # Author: Haozhen Wu
 # Date: 1/28/2016. Modified: 2/2/2016
 # input: xx(CA,EC,PA,SA)_above50_V(50,100,250,500).csv 
-#find molecule overlap among 4 strains(CA,EC,PA,SA) and sort them in decreasing order
+# find molecule overlap among 4 strains(CA,EC,PA,SA) and sort them in decreasing order
 
 
 get_overlap = function(x){                                                                                          
