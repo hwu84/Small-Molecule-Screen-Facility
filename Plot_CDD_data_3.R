@@ -1,6 +1,6 @@
-#Author: Phoenix Logan, Haozhen Wu. 
+# Author: Haozhen Wu. 
 # Usage: Rscript .csv 500(vol)
-
+# original name: sort_CDD_data_3
 
 #strip off the first part of the Synonym for well indexes
 get_strain_info <- function(syn, num){
