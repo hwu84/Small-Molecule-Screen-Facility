@@ -113,6 +113,33 @@ get_data <- function(unique_strain, df,vol){
   plot_overlay(CA_2,EC_2,PA_2,SA_2, unique_strain,vol)
 }
 
+# 3/17 add new function to convert A2 to A02 and add index 1:80
+convert0 = function(data_table){
+  num_index = as.character(c(2:11))
+  num_index_0 = c("02","03","04","05","06","07","08","09","10","11")
+  well_idx_vector <- as.vector(sapply(synonyms, get_strain_info, num=2))
+  well_strain_vector <- as.vector(sapply(synonyms, get_strain_info, num=1))
+  data_table$Strain = well_strain_vector
+  data_table$Wells = character(dim(data_table)[1])
+  data_table$Index = numeric(dim(data_table)[1])
+  k =1
+  for(i in well_idx_vector){
+   temp = strsplit(i,"[ABCDEFGH]")[[1]][2]
+   temp_letter =strsplit(i,"[^ABCDEFGH]")[[1]][1]
+   if(temp %in% num_index_0){
+     data_table$Wells[k] = i
+     data_table$Index[k] = which(ind$Wells %in% i)
+   } else{
+     convert_Index =num_index_0[ which( num_index %in% temp)]
+     convert_well = paste0(temp_letter,convert_Index)
+     data_table$Wells[k] = convert_well
+     data_table$Index[k] = which(ind$Wells %in% convert_well)
+   }
+   k = k+1
+  }
+  return(data_table)
+ }
+
 # generate sorted file and row larger than 50. 
 generateFile <- function(fileName){
   
@@ -123,25 +150,24 @@ generateFile <- function(fileName){
     data_table[,which(colnames(data_table) == i)] = sapply( data_table[,which(colnames(data_table) == i)], inv_neg)
   }
   #
-  well_idx_vector <- as.vector(sapply(synonyms, get_strain_info, num=2))
-  well_strain_vector <- as.vector(sapply(synonyms, get_strain_info, num=1))
-  unique_strain = unique(well_strain_vector)
-  data_table$strain = well_strain_vector
-  data_table$Wells = well_idx_vector
-  #file_name <- unlist(strsplit(args[1], "[.]"))
-  
+  #well_idx_vector <- as.vector(sapply(synonyms, get_strain_info, num=2))
+  #well_strain_vector <- as.vector(sapply(synonyms, get_strain_info, num=1))
+  #unique_strain = unique(well_strain_vector)
+  #data_table$strain = well_strain_vector
+  #data_table$Wells = well_idx_vector
+  unique_strain = unique(data_table$Strain)
   boolen = F
   boolen2 = F
   for( i in unique_strain){
-    temp_df = data_table[which(data_table$strain %in% i),] 
-    if(length(which(temp_df$Wells %in% ind$Wells)) !=80){
-      temp_df <- merge(ind_2, temp_df, by="Wells", sort=FALSE)
-    } else {
-      temp_df <- merge(ind, temp_df, by="Wells", sort=FALSE)
-    }
-    temp_df$strain = NULL
-    temp_df$Wells = NULL
-    
+    temp_df = data_table[which(data_table$Strain %in% i),] 
+  #  if(length(which(temp_df$Wells %in% ind$Wells)) !=80){
+  #    temp_df <- merge(ind_2, temp_df, by="Wells", sort=FALSE)
+  #  } else {
+  #    temp_df <- merge(ind, temp_df, by="Wells", sort=FALSE)
+  #  }
+    #temp_df$strain = NULL
+    #temp_df$Wells = NULL
+    temp_df <- merge(ind, temp_df, by="Wells", sort=FALSE)
     index_larger50 = which(temp_df$PA_500 >=50 | temp_df$SA_500 >=50 |temp_df$EC_500 >=50 |temp_df$CA_500 >=50 |
                              temp_df$PA_250 >=50 | temp_df$SA_250 >=50 |temp_df$EC_250 >=50 |temp_df$CA_250 >=50 |
                              temp_df$PA_100 >=50 | temp_df$SA_100 >=50 |temp_df$EC_100 >=50 |temp_df$CA_100 >=50 |
@@ -198,6 +224,9 @@ data_table <- read.csv(args[1], stringsAsFactors=FALSE)
 # remove duplicate
 data_table = remove_dup(data_table)
 
+#backup = data_table
+#data_table = backup
+
 # Previous Synonyms now is X96_Plate_Well, same meaning
 synonyms <- data_table$X96_Plate_Well
 
@@ -216,6 +245,7 @@ ind_2<-data.frame(Wells=paste0(rep(LETTERS[1:8], each=10), c("2","3","4","5","6"
 unique_strains <- unique(well_strain_vector)
 
 # call method to generate sorted file and row with PA,EC,CA,SA value larger than 50.
+data_table = convert0(data_table)
 generateFile(fileName = file_name)
 
 # For each volumns, generate its individual plots and overlay plot
